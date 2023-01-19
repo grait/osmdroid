@@ -7,6 +7,7 @@ import android.graphics.Paint;
 
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.util.TileSystemWebMercator;
 import org.osmdroid.views.Projection;
 
 /**
@@ -34,6 +35,9 @@ public class GroundOverlay extends Overlay {
     private GeoPoint mTopRight;
     private GeoPoint mBottomRight;
     private GeoPoint mBottomLeft;
+
+    private float mScaleImage = Float.NaN;
+    private float mAzimuth = Float.NaN;
 
     public GroundOverlay() {
         super();
@@ -117,9 +121,48 @@ public class GroundOverlay extends Overlay {
         );
     }
 
+    /**
+     * Set the position of the ground overlay based on an anchor point, a given scaling and rotation
+     *
+     * @param pBottomLeft
+     * @param imageResolution in meters per pixel
+     * @param azimuth
+     */
+    public void setPosition(final GeoPoint pBottomLeft, float imageResolution, float azimuth) {
+        // reset everything
+        mMatrix.reset();
+        mMatrixSrc = null;
+        mMatrixDst = null;
+        mTopLeft = null;
+        mTopRight = null;
+        mBottomRight = null;
+        mBottomLeft = new GeoPoint(pBottomLeft);
+        mScaleImage = imageResolution;
+        mAzimuth = azimuth;
+
+
+
+    }
+
     // TODO check if performance-wise it would make sense to use the mMatrix.setPolyToPoly option
     // TODO even for the 2 corner case
     private void computeMatrix(final Projection pProjection) {
+        if(!Float.isNaN(mScaleImage)) {
+            // calculate scale at specific zoomlevel: ratio of projected width of map (at zoom level) to width of image (in pixels)
+            // get px/m at specific zoom level: world circumfence at latitude divided by circumference at latitude
+            double scaleMap = TileSystemWebMercator.GroundResolution(mBottomLeft.getLatitude(), pProjection.getZoomLevel());
+            float scaleFactor = (float) (mScaleImage / scaleMap);
+            mMatrix.setScale( scaleFactor, scaleFactor);
+
+            // get upper left coordinate of image in pixels
+            float xLeft = pProjection.getLongPixelXFromLongitude(mBottomLeft.getLongitude());
+            float yBottom = pProjection.getLongPixelYFromLatitude(mBottomLeft.getLatitude());
+            float yTop = yBottom - mImage.getHeight() * scaleFactor;
+            mMatrix.postTranslate(xLeft, yTop); // translate in relationship to the top left of image
+            mMatrix.postRotate(mAzimuth, xLeft, yBottom); // rotate at bottomLeft
+            return;
+        }
+
         if (mTopRight == null) { // only 2 corners
             final long x0 = pProjection.getLongPixelXFromLongitude(mTopLeft.getLongitude());
             final long y0 = pProjection.getLongPixelYFromLatitude(mTopLeft.getLatitude());
