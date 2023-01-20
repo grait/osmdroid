@@ -27,6 +27,8 @@ public class GroundOverlay extends Overlay {
     private float mBearing;
     private float mTransparency;
     private Bitmap mImage;
+    private float mScaleImage = Float.NaN; // resolution of the given image in px/m
+
 
     private float[] mMatrixSrc;
     private float[] mMatrixDst;
@@ -36,7 +38,6 @@ public class GroundOverlay extends Overlay {
     private GeoPoint mBottomRight;
     private GeoPoint mBottomLeft;
 
-    private float mScaleImage = Float.NaN;
     private float mAzimuth = Float.NaN;
 
     public GroundOverlay() {
@@ -125,7 +126,7 @@ public class GroundOverlay extends Overlay {
      * Set the position of the ground overlay based on an anchor point, a given scaling and rotation
      *
      * @param pBottomLeft
-     * @param imageResolution in meters per pixel
+     * @param imageResolution in pixel per meter
      * @param azimuth
      */
     public void setPosition(final GeoPoint pBottomLeft, float imageResolution, float azimuth) {
@@ -148,15 +149,14 @@ public class GroundOverlay extends Overlay {
     // TODO even for the 2 corner case
     private void computeMatrix(final Projection pProjection) {
         if(!Float.isNaN(mScaleImage)) {
-            // calculate scale at specific zoomlevel: ratio of projected width of map (at zoom level) to width of image (in pixels)
             // get px/m at specific zoom level: world circumfence at latitude divided by circumference at latitude
-            double scaleMap = TileSystemWebMercator.GroundResolution(mBottomLeft.getLatitude(), pProjection.getZoomLevel());
-            float scaleFactor = (float) (mScaleImage / scaleMap);
+            double scaleMap = 1 / TileSystemWebMercator.GroundResolution(mBottomLeft.getLatitude(), pProjection.getZoomLevel());
+            float scaleFactor = (float) scaleMap / mScaleImage;
             mMatrix.setScale( scaleFactor, scaleFactor);
 
-            // get upper left coordinate of image in pixels
             float xLeft = pProjection.getLongPixelXFromLongitude(mBottomLeft.getLongitude());
             float yBottom = pProjection.getLongPixelYFromLatitude(mBottomLeft.getLatitude());
+            // get top left coordinate of image in pixels
             float yTop = yBottom - mImage.getHeight() * scaleFactor;
             mMatrix.postTranslate(xLeft, yTop); // translate in relationship to the top left of image
             mMatrix.postRotate(mAzimuth, xLeft, yBottom); // rotate at bottomLeft
