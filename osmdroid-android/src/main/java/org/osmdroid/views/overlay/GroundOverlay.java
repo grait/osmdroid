@@ -1,5 +1,7 @@
 package org.osmdroid.views.overlay;
 
+import static org.osmdroid.util.TileSystem.MapSize;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -7,7 +9,6 @@ import android.graphics.Paint;
 
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
-import org.osmdroid.util.TileSystemWebMercator;
 import org.osmdroid.views.Projection;
 
 /**
@@ -38,7 +39,7 @@ public class GroundOverlay extends Overlay {
     private GeoPoint mBottomRight;
     private GeoPoint mBottomLeft;
 
-    private float mAzimuth = Float.NaN;
+    private double mAzimuthRad = Float.NaN;
 
     public GroundOverlay() {
         super();
@@ -121,7 +122,8 @@ public class GroundOverlay extends Overlay {
                 pBottomRight.getLatitude(), pTopLeft.getLongitude()
         );
     }
-
+    private double radiusEquator = 6378137.0; // in meters
+    private double radiusPoles = 6356752.314; // in metes
     /**
      * Set the position of the ground overlay based on an anchor point, a given scaling and rotation
      *
@@ -134,35 +136,48 @@ public class GroundOverlay extends Overlay {
         mMatrix.reset();
         mMatrixSrc = null;
         mMatrixDst = null;
-        mTopLeft = null;
-        mTopRight = null;
-        mBottomRight = null;
         mBottomLeft = new GeoPoint(pBottomLeft);
         mScaleImage = imageResolution;
-        mAzimuth = azimuth;
+        mAzimuthRad = azimuth*Math.PI/180;
 
+        double latRad = mBottomLeft.getLatitude() * Math.PI/180;
 
+        double rEarthLat = Math.sqrt(Math.pow(radiusEquator,2) * Math.pow(Math.cos(latRad),2) +
+                Math.pow(radiusPoles,2) * Math.pow(Math.sin(latRad),2));
+
+        float heightMeter = mImage.getHeight()/imageResolution;
+        float widthMeter = mImage.getWidth()/imageResolution;
+
+        double deltaXHeight = Math.sin(mAzimuthRad) * heightMeter;
+        double deltaYHeight = Math.cos(mAzimuthRad) * heightMeter;
+
+        double deltaLonHeight = 360 * deltaXHeight / (2 * Math.PI * rEarthLat * Math.cos(latRad));
+        double deltaLatHeight = 360 * deltaYHeight / (2 * Math.PI * rEarthLat);
+
+        double lat = mBottomLeft.getLatitude() + deltaLatHeight;
+        double lon = mBottomLeft.getLongitude() + deltaLonHeight;
+        mTopLeft = new GeoPoint(lat, lon);
+
+        double deltaXWidth = Math.cos(mAzimuthRad) * widthMeter;
+        double deltaYWidth = - Math.sin(mAzimuthRad) * widthMeter;
+
+        double deltaLonWidth = 360 * deltaXWidth / (2 * Math.PI * rEarthLat * Math.cos(latRad));
+        double deltaLatWidth = 360 * deltaYWidth / (2 * Math.PI * rEarthLat);
+
+        lat = mBottomLeft.getLatitude() + deltaLatWidth;
+        lon = mBottomLeft.getLongitude() + deltaLonWidth;
+        mBottomRight = new GeoPoint(lat, lon);
+
+        lat = mBottomRight.getLatitude() + deltaLatHeight;
+        lon = mBottomRight.getLongitude() + deltaLonHeight;
+        mTopRight = new GeoPoint(lat, lon);
 
     }
+
 
     // TODO check if performance-wise it would make sense to use the mMatrix.setPolyToPoly option
     // TODO even for the 2 corner case
     private void computeMatrix(final Projection pProjection) {
-        if(!Float.isNaN(mScaleImage)) {
-            // get px/m at specific zoom level: world circumfence at latitude divided by circumference at latitude
-            double scaleMap = 1 / TileSystemWebMercator.GroundResolution(mBottomLeft.getLatitude(), pProjection.getZoomLevel());
-            float scaleFactor = (float) scaleMap / mScaleImage;
-            mMatrix.setScale( scaleFactor, scaleFactor);
-
-            float xLeft = pProjection.getLongPixelXFromLongitude(mBottomLeft.getLongitude());
-            float yBottom = pProjection.getLongPixelYFromLatitude(mBottomLeft.getLatitude());
-            // get top left coordinate of image in pixels
-            float yTop = yBottom - mImage.getHeight() * scaleFactor;
-            mMatrix.postTranslate(xLeft, yTop); // translate in relationship to the top left of image
-            mMatrix.postRotate(mAzimuth, xLeft, yBottom); // rotate at bottomLeft
-            return;
-        }
-
         if (mTopRight == null) { // only 2 corners
             final long x0 = pProjection.getLongPixelXFromLongitude(mTopLeft.getLongitude());
             final long y0 = pProjection.getLongPixelYFromLatitude(mTopLeft.getLatitude());
