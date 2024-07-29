@@ -41,6 +41,12 @@ public class GroundOverlay extends Overlay {
 
     private double mAzimuthRad = Float.NaN;
 
+    // limit the biggest dimension of the ground floor to 5000 px
+    private final static int maxWidthOrHeight = 5000;
+    // resulting downsizing scale based on the given max width or height
+    private float scaleDownsizing = 1f;
+
+
     public GroundOverlay() {
         super();
         mBearing = 0.0f;
@@ -48,7 +54,20 @@ public class GroundOverlay extends Overlay {
     }
 
     public void setImage(final Bitmap pImage) {
-        mImage = pImage;
+        // check if image is too big, set a limit
+        float scale = 1f;
+
+        // scale down the image to the given max height and width
+        if(pImage.getWidth() > maxWidthOrHeight) {
+            scale = (float) pImage.getWidth() / maxWidthOrHeight;
+
+        }
+        if (pImage.getHeight()/scale > maxWidthOrHeight) {
+            scale = pImage.getHeight() / scale / maxWidthOrHeight;
+        }
+        mImage = Bitmap.createScaledBitmap(pImage, (int)(pImage.getWidth()/scale), (int)(pImage.getHeight()/scale) , true );
+
+        scaleDownsizing = scale;
         mMatrixSrc = null;
     }
 
@@ -137,7 +156,7 @@ public class GroundOverlay extends Overlay {
         mMatrixSrc = null;
         mMatrixDst = null;
         mBottomLeft = new GeoPoint(pBottomLeft);
-        mScaleImage = imageResolution;
+        mScaleImage = imageResolution/ scaleDownsizing;
         mAzimuthRad = azimuth*Math.PI/180;
 
         double latRad = mBottomLeft.getLatitude() * Math.PI/180;
@@ -145,8 +164,8 @@ public class GroundOverlay extends Overlay {
         double rEarthLat = Math.sqrt(Math.pow(radiusEquator,2) * Math.pow(Math.cos(latRad),2) +
                 Math.pow(radiusPoles,2) * Math.pow(Math.sin(latRad),2));
 
-        float heightMeter = mImage.getHeight()/imageResolution;
-        float widthMeter = mImage.getWidth()/imageResolution;
+        float heightMeter = mImage.getHeight()/mScaleImage;
+        float widthMeter = mImage.getWidth()/mScaleImage;
 
         double deltaXHeight = Math.sin(mAzimuthRad) * heightMeter;
         double deltaYHeight = Math.cos(mAzimuthRad) * heightMeter;
@@ -226,5 +245,7 @@ public class GroundOverlay extends Overlay {
         mMatrixDst[7] = (float) bottomLeftCornerY;
 
         mMatrix.setPolyToPoly(mMatrixSrc, 0, mMatrixDst, 0, 4);
+
+
     }
 }
