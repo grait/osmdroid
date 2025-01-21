@@ -1,3 +1,17 @@
+### osmdroid is now archived and will no longer receive updates or new releases
+
+While the project is now archived, the source code and documentation will remain available for those who wish to explore, fork, or maintain it independently.  
+This project launched at the same time as Android 1.0 to provide an alternative to Google Maps, using the same API with open map sources.
+A lot has changed since then and the effort to maintain this project has become untenable.
+
+We would like to thank every one of the
+[75+ contributors](https://github.com/osmdroid/osmdroid/graphs/contributors)
+over the last
+[16 years](https://code.google.com/archive/p/osmdroid/source/default/commits?page=15)
+who has contributed to the success of osmdroid.
+
+---
+
 # osmdroid [![Build Status](https://api.travis-ci.org/osmdroid/osmdroid.svg?branch=master)](https://travis-ci.org/osmdroid/osmdroid) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.osmdroid/osmdroid-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.osmdroid/osmdroid-android) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-osmdroid-brightgreen.svg?style=flat)](https://android-arsenal.com/details/1/279) [![SourceSpy Dashboard](https://sourcespy.com/shield.svg)](https://sourcespy.com/github/osmdroidosmdroid/)
 
 osmdroid is a (almost) full/free replacement for Android's MapView (v1 API) class. It also includes a modular tile provider system with support for numerous online and offline tile sources and overlay support with built-in overlays for plotting icons, tracking location, and drawing shapes.
@@ -7,11 +21,11 @@ osmdroid is a (almost) full/free replacement for Android's MapView (v1 API) clas
 <a href="https://play.google.com/store/apps/details?id=org.osmdroid">
 <img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" alt="Get it on F-Droid" height="90"></a>
 
-Current Release: **6.1.14 Aug 22, 2022**
+Current Release: **6.1.20 Aug 18, 2024**
 
-Current Development version: 6.1.15-SNAPSHOT
+Current Development version: 6.1.21-SNAPSHOT
 
-Next Release Version (planned): 6.1.15
+Next Release Version (planned): 6.1.21
 
 Note: check your calendar, it may take up to a few days for all global mirrors to update.
 
@@ -24,7 +38,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.osmdroid:osmdroid-android:<VERSION>'
+    implementation 'org.osmdroid:osmdroid-android:<VERSION>'
 }
 ```
 
@@ -64,7 +78,7 @@ repositories {
     }
 }
 dependencies {
-    compile 'org.osmdroid:osmdroid-android:<VERSION>-SNAPSHOT:debug@aar'
+    implementation 'org.osmdroid:osmdroid-android:<VERSION>-SNAPSHOT:debug@aar'
 }
 ```
 
@@ -176,7 +190,18 @@ allprojects {
 Then in your APK or AAR project that needs osmdroid.
 
 ```
-    compile 'org.osmdroid:osmdroid-android:<VERSION>-SNAPSHOT:debug@aar'
+    implementation 'org.osmdroid:osmdroid-android:<VERSION>-SNAPSHOT:debug@aar'
 ```
 Where VERSION is the version listed as the value for `pom.version` in osmdroid's `gradle.properties`. Note that when using the release versions from Maven Central, drop the `:debug@aar` part. When using a "release" version that you build locally with gradle, you'll need `:debug@aar` instead.
 
+
+# Support
+
+osmdroid is entirely community supported. There is no corporate sponsorship. No full time employees, no paid employees.
+It's all volunteer support, if that. If you see a problem, feel free to report, fix it and open a pull request. 
+You have access to 100% of the source code. Maps are **hard** to get right and this library isn't perfect.
+
+Please don't complain about slow response times or lack of support. You will be banned. No warnings, no second chances.
+
+We do NOT provide map data, map tiles, imagery, etc. That is all provided by a map tile ~~source~~ that you select or that you provide.
+Please don't complain about a map source showing you the wrong data. It's not the fault of this library. 
